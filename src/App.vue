@@ -1,4 +1,8 @@
 <script setup lang="ts">
+  import {onMounted, ref} from 'vue'
+  import {Lead} from "./models/Lead.ts";
+  import axios from './config/axios.config.ts'
+
   const columns = [
         {
         title: 'Название',
@@ -26,6 +30,36 @@
         key: 'created_at'
       },
     ];
+
+  // Reactive data
+  let tableData = ref([])
+  let search = ref('')
+
+  // Methods
+  async function loadData(): Promise<void> {
+    try {
+      const { data } = await axios.get<Lead[]>(
+          `leads`,
+          {
+            params: {
+              query: search.value
+            }
+          }
+      );
+
+      if (Array.isArray(data)) {
+        tableData.value = data;
+      }
+      else {
+        tableData.value = []
+      }
+    } catch (e) {
+      console.log(`При выполнении запроса произошла ошибка: ${e}`)
+    }
+  }
+
+  // Hooks
+  onMounted(loadData)
 </script>
 
 <template>
@@ -36,15 +70,20 @@
       <AInputSearch
           v-model:value=search
           placeholder="Найти..."
-          @input="loadData()"
+          @input="loadData"
       />
     </template>
 
     <ATable
         :columns="columns"
-        :data-source="data"
+        :data-source="tableData"
         :expand-column-width="100"
     >
+
+      <template #expandColumnTitle>
+        <span>Контакты</span>
+      </template>
+
       <template #expandedRowRender="{ record }">
         <ul>
           <li v-for="contact in record.contacts" :key="contact.id">
@@ -62,9 +101,7 @@
           </li>
         </ul>
       </template>
-      <template #expandColumnTitle>
-        <span>Контакты</span>
-      </template>
+
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <span>
