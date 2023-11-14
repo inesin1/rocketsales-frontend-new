@@ -33,11 +33,14 @@
 
   // Reactive data
   let tableData = ref([])
+  let tableLoading = ref(false)
   let search = ref('')
 
   // Methods
   async function loadData(): Promise<void> {
     try {
+      tableLoading.value = true;
+
       const { data } = await axios.get<Lead[]>(
           `leads`,
           {
@@ -53,6 +56,8 @@
       else {
         tableData.value = []
       }
+
+      tableLoading.value = false;
     } catch (e) {
       console.log(`При выполнении запроса произошла ошибка: ${e}`)
     }
@@ -76,6 +81,8 @@
 
     <ATable
         :columns="columns"
+        :row-key="record => record.id"
+        :loading="tableLoading"
         :data-source="tableData"
         :expand-column-width="100"
     >
